@@ -17,8 +17,8 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 	mux.Handle("GET /app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir("./server")))))
-	mux.HandleFunc("GET /api/metrics", apiCfg.metrics)
-	mux.HandleFunc("POST /api/reset", apiCfg.reset)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.metrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.reset)
 	mux.HandleFunc("GET /api/healthz", healthz)
 	server := http.Server{}
 	server.Addr = ":8080"
@@ -35,9 +35,15 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 
 func (cfg *apiConfig) metrics(w http.ResponseWriter, req *http.Request) {
 	hits := cfg.fileserverHits.Add(0)
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, fmt.Sprintf("Hits: %d", hits))
+	io.WriteString(w, fmt.Sprintf(
+	`<html>
+		<body>
+			<h1>Welcome, Chirpy Admin</h1>
+			<p>Chirpy has been visited %d times!</p>
+		</body>
+	</html>`, hits))
 }
 
 func (cfg *apiConfig) reset(w http.ResponseWriter, req *http.Request) {
